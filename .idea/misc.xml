@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="app/src/main/res/drawable/circle.xml" value="0.25" />
+        <entry key="app/src/main/res/drawable/custom.xml" value="0.26974358974358975" />
+        <entry key="app/src/main/res/drawable/edit_text_bottom_line.xml" value="0.26974358974358975" />
+        <entry key="app/src/main/res/drawable/grid_item.xml" value="0.27395833333333336" />
+        <entry key="app/src/main/res/drawable/img.xml" value="0.25" />
+        <entry key="app/src/main/res/drawable/progress_color.xml" value="0.27395833333333336" />
+        <entry key="app/src/main/res/drawable/progress_drawable_vertical.xml" value="0.27395833333333336" />
+        <entry key="app/src/main/res/drawable/progress_drawable_vertical_fifth.xml" value="0.27395833333333336" />
+        <entry key="app/src/main/res/drawable/progress_drawable_vertical_second.xml" value="0.27395833333333336" />
+        <entry key="app/src/main/res/drawable/progress_drawable_vertical_sixth.xml" value="0.27395833333333336" />
+        <entry key="app/src/main/res/drawable/progress_drawable_vertical_third.xml" value="0.27395833333333336" />
+        <entry key="app/src/main/res/drawable/progress_drawable_verttical_fourth.xml" value="0.27395833333333336" />
+        <entry key="app/src/main/res/drawable/round_button.xml" value="0.26974358974358975" />
+        <entry key="app/src/main/res/drawable/rounded_borner_button.xml" value="0.27395833333333336" />
+        <entry key="app/src/main/res/drawable/rounded_corners_button.xml" value="0.26974358974358975" />
+        <entry key="app/src/main/res/drawable/rounded_corners_layout.xml" value="0.14895833333333333" />
+        <entry key="app/src/main/res/drawable/spinner_outline.xml" value="0.27395833333333336" />
+        <entry key="app/src/main/res/drawable/spinner_popup.xml" value="0.27395833333333336" />
+        <entry key="app/src/main/res/layout/activity_contact_profile.xml" value="0.335" />
+        <entry key="app/src/main/res/layout/activity_home.xml" value="0.25" />
+        <entry key="app/src/main/res/layout/activity_main.xml" value="0.335" />
+        <entry key="app/src/main/res/layout/activity_register.xml" value="0.335" />
+        <entry key="app/src/main/res/layout/activity_signin.xml" value="0.25" />
+        <entry key="app/src/main/res/layout/grid_item.xml" value="0.335" />
+        <entry key="app/src/main/res/layout/my_custom_toast.xml" value="0.12537993920972645" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="11" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
+  <component name="ProjectType">
+    <option name="id" value="Android" />
+  </component>
+</project>
