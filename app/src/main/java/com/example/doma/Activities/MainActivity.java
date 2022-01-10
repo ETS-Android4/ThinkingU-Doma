@@ -1,3 +1,9 @@
+/**
+ * Main activity
+ * Landing activity of the application
+ * Having two buttons. One will lead to registration activity and other will lead to sign in activity
+ */
+
 package com.example.doma.Activities;
 
 import androidx.annotation.RequiresApi;

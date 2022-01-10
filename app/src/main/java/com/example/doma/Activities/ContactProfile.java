@@ -1,3 +1,9 @@
+/**
+ * ContactProfile
+ * Once a user taps on a contact's profile in home activity, this activity opens with the data
+ * of the contact whose profile was tapped on.
+ */
+
 package com.example.doma.Activities;
 
 import androidx.annotation.NonNull;
@@ -5,11 +11,15 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Handler;
-import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.example.doma.Notifications.FcmNotificationSender;
@@ -34,13 +44,14 @@ public class ContactProfile extends AppCompatActivity {
 
     CircleImageView contactProfileImage;
     TextView name, energeyPercentage;
+    EditText editThought;
     ProgressBar energyBar;
+    Spinner seletctMessage;
     Button send;
     String userToken;
-    FirebaseAuth mFirebaseAuth;
     FirebaseUser firebaseUser;
     DatabaseReference mFirebaseDatabase;
-
+    String thought;
     List<String> notificationMessagesList = new ArrayList<>();
 
     @Override
@@ -52,41 +63,103 @@ public class ContactProfile extends AppCompatActivity {
         energeyPercentage = findViewById(R.id.energy_percentage);
         energyBar = findViewById(R.id.energy_bar);
         send = findViewById(R.id.send);
-
+        seletctMessage = findViewById(R.id.dropdown_menu);
+        editThought = findViewById(R.id.edit_thought);
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         mFirebaseDatabase = FirebaseDatabase.getInstance().getReference();
 
         Intent intent = getIntent();
+        // Getting the name of the user, who tapped on this user's profile in home activity. a.k.a: sender.
         String sender = intent.getStringExtra("sender");
+
+        /*
+            NotificationsMessagesList contains the default list of messages. Sender can select
+            one of these messages, customize them or, send their own message by typing it into the
+            text field.
+         */
         notificationMessagesList.add(sender + " sent you a thought. That's great. Show some love.");
         notificationMessagesList.add("Your loved one, " + sender + " is thinking about you");
         notificationMessagesList.add("You have received a thought by a loved one of yours");
-        String Uid = intent.getStringExtra("Contact_Uid");
+
+        // Spinner is the select menu that shows the above default messages.
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, notificationMessagesList);
+
+        seletctMessage.setAdapter(adapter); // First message in the list is selected by default.
+
+        editThought.setText(notificationMessagesList.get(0)); // First message in the list is shown in editThought
+        // editText field by default. It can be edited
+
+        String Uid = intent.getStringExtra("Contact_Uid"); // Getting uid of the receiver.
+
+        // Getting receiver's data to show in UI.
         UserData userData = (UserData) intent.getSerializableExtra("Contact_Data");
         Picasso.get().load(userData.getImageUrl()).fit().centerCrop().into(contactProfileImage);
         name.setText(userData.getFullName());
         energeyPercentage.setText(userData.getEnergyPercentage() + " %");
-//        energyBar.setProgressDrawable();
         energyBar.setProgress(Integer.valueOf(userData.getEnergyPercentage()));
+
+        seletctMessage.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                editThought.setText(notificationMessagesList.get(position));
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                thought = notificationMessagesList.get(new Random().nextInt(notificationMessagesList.size() - 1) + 0);
+            }
+        });
 
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!editThought.getText().toString().isEmpty()) {
+                    thought = editThought.getText().toString();
+                }
                 increaseEnergyPoints(Uid, userData);
-                sendNotification(Uid,  sender);
-
+                sendNotification(Uid,  thought, send);
             }
         });
-
     }
 
+    /*
+     Once sender taps on SEND button, energy point of receiver will be increased by 1 and shown
+     in energy progress bar.
+     */
     private void increaseEnergyPoints(String uid, UserData userData) {
         FirebaseDatabase.getInstance().getReference().child("userDetails").child(uid).child("energyPoints")
                 .setValue(Integer.valueOf(userData.getEnergyPercentage()) + 1);
     }
 
-    private void sendNotification(String uid, String name) {
+    // Disable send button for 1 hour after a user sends a thought. This is to avoid notification spamming.
+    private void disableButtonTimer(Button send) {
+        new CountDownTimer(3600000, 1000) {
+            public void onTick(long millisUntilFinished) {
+                Long secondsRemaining = millisUntilFinished / 1000;
+                String hours = String.valueOf(secondsRemaining / 3600);
+                String minutes = String.valueOf((secondsRemaining % 3600) / 60);
+                String seconds = String.valueOf(secondsRemaining % 60);
+                String timeString = hours + ":" + minutes + ":" + seconds;
+                send.setTextSize(14);
+                send.setText("wait: " + timeString);
+            }
+            public void onFinish() {
+                send.setText("SEND");
+                send.setEnabled(true);
+            }
+        }.start();
+    }
 
+    /*
+        Get the receiver's device token from db and send them a notificaion in a separate thread.
+        Notification will be sent after a delay of 3 seconds to give enough time for db to return the
+        device token.
+     */
+
+    private void sendNotification(String uid, String thought, Button send) {
+        send.setEnabled(false);
+        disableButtonTimer(send);
         FirebaseDatabase.getInstance().getReference().child("Tokens").child(uid).child("token").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -105,7 +178,7 @@ public class ContactProfile extends AppCompatActivity {
             public void run() {
                 FcmNotificationSender notificationSender =
                         new FcmNotificationSender(userToken, "ThinkingU-Doma",
-                                notificationMessagesList.get(new Random().nextInt(notificationMessagesList.size() - 1) + 0), getApplicationContext(),
+                                thought, getApplicationContext(),
                                 ContactProfile.this);
 
                 notificationSender.sendNotifications();

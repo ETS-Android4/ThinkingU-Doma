@@ -1,3 +1,11 @@
+/**
+ *
+ * Register activity
+ * Users can input their data and register themselves into the firebase database
+ * all fields in this activity are required.
+ *
+ */
+
 package com.example.doma.Activities;
 
 import androidx.annotation.NonNull;
@@ -33,9 +41,6 @@ import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.squareup.picasso.Picasso;
-
-import java.util.Random;
-
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class Register extends AppCompatActivity {
@@ -59,22 +64,26 @@ public class Register extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
+        // referencing the UI elements
         userEmail = findViewById(R.id.edittextemail);
         userPassword = findViewById(R.id.edittextpassword);
         userFullName = findViewById(R.id.edittextname);
         userPhoneNumber = findViewById(R.id.edittextphone);
-
         profileImage = findViewById(R.id.chooseimagebutton);
         signUp = findViewById(R.id.signup);
-
         textViewSignIn = findViewById(R.id.textviewsignin);
         profile = findViewById(R.id.profile);
         profileImageView = findViewById(R.id.profile_image);
         progressBar = findViewById(R.id.register_progress);
 
+        // Creating firebase auth instances
         mFirebaseAuth = FirebaseAuth.getInstance();
+        // Firebase database instance to refer to data inside database.
         mFirebaseDatabase = FirebaseDatabase.getInstance();
+        // storage reference to store image files
         storageReference = FirebaseStorage.getInstance().getReference("uploads");
+
+        // clicking this button will open up the users device's photo library and they can choose a photo.
         profileImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -116,7 +125,7 @@ public class Register extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
+        // Get the image data of the user's picked image and load that image in profileImageView UI
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK
             && data != null && data.getData() != null) {
             mImageUri = data.getData();
@@ -126,6 +135,8 @@ public class Register extends AppCompatActivity {
 
     public String[] userInputs () {
         String [] inputs = new String[4];
+
+        // Return user inputs for all fields as an array.
 
         final String email = userEmail.getText().toString();
         final String password = userPassword.getText().toString();
@@ -139,6 +150,7 @@ public class Register extends AppCompatActivity {
         return inputs;
     }
 
+    // validate user inputs. If there is any emoty field upon registration, show error
     public boolean inputValidation (String email, String password, String fullName, String phoneNumber) {
 
         if (email.isEmpty()) {
@@ -169,6 +181,7 @@ public class Register extends AppCompatActivity {
 
     }
 
+    // register user in firebase and call uploadProfileImageToDb function
     public void registerUserInFirebase (String email, String password, String name, String phoneNumber) {
         mFirebaseAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(Register.this, new OnCompleteListener<AuthResult>() {
@@ -177,7 +190,7 @@ public class Register extends AppCompatActivity {
                         if (!task.isSuccessful()) {
                             MyCustomToast.createToast(Register.this, "Registration unsuccessful. Please, try again.", true );
                         } else {
-                            uploadUserData(task, email, name, phoneNumber);
+                            uploadProfileImageToDb(task, email, name, phoneNumber);
                         }
                     }
                 });
@@ -189,7 +202,59 @@ public class Register extends AppCompatActivity {
             return mime.getExtensionFromMimeType(contentResolver.getType(uri));
         }
 
-        private void uploadUserData(Task<AuthResult> task, String email, String name, String phoneNumber) {
+        // Store registering user's device token in database. Needed to send notification
+        private void storeUserDeviceTokenInDatabase(String uid) {
+            FirebaseMessaging.getInstance().getToken().addOnCompleteListener(new OnCompleteListener<String>() {
+                @Override
+                public void onComplete(@NonNull Task<String> task) {
+                    if (!task.isSuccessful()) {
+                        Toast.makeText(Register.this, "Token generation unsuccessful.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    // Get new FCM registration token
+                    String token = task.getResult();
+                    FirebaseDatabase.getInstance().getReference("Tokens").child(uid).child("token").setValue(token);
+                    //FirebaseDatabase
+                    Log.d("TOKEN GOT in register", token);
+                }
+            });
+        }
+
+        // Store user's metadata in database after successful image upload.
+        private void storeUserDataInDatabase(String uid, Uri uri, Task<AuthResult> task, String email, String name, String phoneNumber) {
+            /*
+                Store user data in database under userDetails node's child node that is
+                this user's uid that is provided by firebase. Database structure userDetails > uID > <data>
+                After successful data insertion into the database, go to home activity and pass the
+                name, phone, profileImage and email to the home activity
+            */
+            UserData userData = new UserData(name, phoneNumber, uri.toString(), 50, "");
+            mFirebaseDatabase.getReference().child("userDetails").child(uid)
+                    .setValue(userData).addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void unused) {
+                    Intent intent = new Intent(Register.this, Home.class);
+                    intent.putExtra("name", name);
+                    intent.putExtra("phone", phoneNumber);
+                    intent.putExtra("profileImage", uri.toString());
+                    intent.putExtra("email", email);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    MyCustomToast.createToast(Register.this, "An error occurred while storing the data. Please try again.", true );
+                }
+            });
+        }
+
+        private void uploadProfileImageToDb(Task<AuthResult> task, String email, String name, String phoneNumber) {
+            /*
+                If user has selected an image, upload it to storage reference and then make a call to
+                storeUserDataInDatabase() and storeUserDeviceTokenInDatabase() functions.
+                If user has not selected an image, show toast saying, "No image selected".
+             */
             if (mImageUri != null) {
                 StorageReference fileReference = storageReference.child(System.currentTimeMillis()
                 +"."+getFileExtension(mImageUri));
@@ -200,44 +265,11 @@ public class Register extends AppCompatActivity {
                                 taskSnapshot.getStorage().getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                                     @Override
                                     public void onSuccess(Uri uri) {
-                                        UserData userData = new UserData(name, phoneNumber, uri.toString(), new Random().nextInt(100) + 1, "");
                                         String uid = task.getResult().getUser().getUid();
-                                        mFirebaseDatabase.getReference().child("userDetails").child(uid)
-                                                .setValue(userData).addOnSuccessListener(new OnSuccessListener<Void>() {
-                                            @Override
-                                            public void onSuccess(Void unused) {
-                                                Intent intent = new Intent(Register.this, Home.class);
-                                                intent.putExtra("name", name);
-                                                intent.putExtra("phone", phoneNumber);
-                                                intent.putExtra("profileImage", uri.toString());
-                                                intent.putExtra("email", email);
-                                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                                startActivity(intent);
-                                            }
-                                        }).addOnFailureListener(new OnFailureListener() {
-                                            @Override
-                                            public void onFailure(@NonNull Exception e) {
-                                                MyCustomToast.createToast(Register.this, "An error occurred while storing the data. Please try again.", true );
-                                            }
-                                        });
-                                        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(new OnCompleteListener<String>() {
-                                                    @Override
-                                                    public void onComplete(@NonNull Task<String> task) {
-                                                        if (!task.isSuccessful()) {
-                                                            //Log.w("TOKEN", "Fetching FCM registration token failed", task.getException());
-                                                            Toast.makeText(Register.this, "Token generation unsuccessful.", Toast.LENGTH_SHORT).show();
-                                                            return;
-                                                        }
-                                                        // Get new FCM registration token
-                                                        String token = task.getResult();
-                                                        FirebaseDatabase.getInstance().getReference("Tokens").child(uid).child("token").setValue(token);
-                                                        //FirebaseDatabase
-                                                        Log.d("TOKEN GOT in register", token);
-                                                    }
-                                                });
+                                        storeUserDataInDatabase(uid,uri, task, email, name, phoneNumber);
+                                        storeUserDeviceTokenInDatabase(uid);
                                     }
                                 });
-
                             }
                         })
                         .addOnFailureListener(new OnFailureListener() {
@@ -257,6 +289,4 @@ public class Register extends AppCompatActivity {
                 Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show();
             }
         }
-
-
 }

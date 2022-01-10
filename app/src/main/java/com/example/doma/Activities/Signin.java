@@ -1,3 +1,10 @@
+/**
+ * Sign in activity.
+ * Responsible for signing the user into the application. Also checks, if the previosu user
+ * session was ended or not. If the user was not signed out previously, then sign them back in
+ * without the need of them to re insert the email and password.
+ */
+
 package com.example.doma.Activities;
 
 import androidx.annotation.NonNull;
@@ -51,6 +58,7 @@ public class Signin extends AppCompatActivity {
         mAuthStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                // Check if user was not previously signed out. If not, sign them in automatically.
                 FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
                 if (firebaseUser != null) {
                     moveToHome(firebaseUser);
@@ -61,6 +69,9 @@ public class Signin extends AppCompatActivity {
         };
 
         signin.setOnClickListener(new View.OnClickListener() {
+            /*
+                Auhtnticate the user and sign them into the application.
+             */
             @Override
             public void onClick(View v) {
                 String [] inputs = userInputsSignIn();
@@ -103,6 +114,7 @@ public class Signin extends AppCompatActivity {
         return inputs;
     }
 
+    // Validate if there is an empty field
     public boolean inputValidation (String email, String password) {
 
         if (email.isEmpty()) {
@@ -127,6 +139,7 @@ public class Signin extends AppCompatActivity {
         firebaseAuth.addAuthStateListener(mAuthStateListener);
     }
 
+    // Function responsible for moving to home activity.
     private void moveToHome(FirebaseUser firebaseUser) {
 
         firebaseDatabase.getReference().child("userDetails").child(firebaseUser.getUid())

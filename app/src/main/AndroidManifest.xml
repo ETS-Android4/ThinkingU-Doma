@@ -15,9 +15,6 @@
         android:theme="@style/Theme.Doma"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".Activities.userProfileActivity"
-            android:exported="false" />
-        <activity
             android:name=".Activities.ContactProfile"
             android:exported="false" />
         <activity

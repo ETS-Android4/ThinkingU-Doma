@@ -1,3 +1,10 @@
+/**
+ * HomeActivity
+ * This is the home class. User's contacts who have the application installed in their phone,
+ * are shown in this class inside a gridview. The gridview is scrollable. Each contact's profile can
+ * be tapped on which will lead to that specific contact's profile page.
+ */
+
 package com.example.doma.Activities;
 
 import androidx.annotation.NonNull;
@@ -62,16 +69,21 @@ public class Home extends AppCompatActivity {
         gridView = findViewById(R.id.contacts_installed_app_gridView);
 
         Intent intent = getIntent();
+        // get the name of the current logged in user from previous activity
         String name = intent.getStringExtra("name");
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         firebaseAuth = FirebaseAuth.getInstance();
         databaseReference = FirebaseDatabase.getInstance().getReference("userDetails");
-
+        
+        /*
+            Each time user comes back to application, it is crucial to update their device token
+            into the database because, a new token is generated everytime so, the old one will not
+            work and user will not be able to receive the notification.
+         */
         FirebaseMessaging.getInstance().getToken().addOnCompleteListener(new OnCompleteListener<String>() {
             @Override
             public void onComplete(@NonNull Task<String> task) {
                 if (!task.isSuccessful()) {
-                    //Log.w("TOKEN", "Fetching FCM registration token failed", task.getException());
                     Toast.makeText(Home.this, "Token generation unsuccessful in home.", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -89,6 +101,12 @@ public class Home extends AppCompatActivity {
 
         contactsWithAppInstalled = new ArrayList<>();
         contactsWithAppInstalledUids = new ArrayList<>();
+
+        /*
+            List of vertical progress bars drawables. The vertical progress bar is the
+            energy bar that shows the energy bar in percentage. a random drawable will be applied
+            to each energy progress bar for each user.
+         */
 
         drawablesList = new ArrayList<>();
         drawablesList.add(getResources().getDrawable(R.drawable.progress_drawable_vertical));
@@ -123,6 +141,11 @@ public class Home extends AppCompatActivity {
 
     }
 
+    /*
+        get all contacts from database and check if any of them are in user's contact list.
+        If found, show them to user using a gridview and gridAdapter.
+
+     */
     public void findContactsWithAppInstalled() {
         databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
             @RequiresApi(api = Build.VERSION_CODES.N)
@@ -132,7 +155,7 @@ public class Home extends AppCompatActivity {
                     String phoneNum = dataSnapshot.child("phoneNumber").getValue().toString();
                     for (String phoneNumFromPhone : phoneNumsFromPhone) {
                         if (phoneNumFromPhone.contains(phoneNum) || phoneNumFromPhone.equals(phoneNum)) {
-                            if (!containsName(contactsWithAppInstalled, phoneNum)) {
+                            if (!checkContainsNameInList(contactsWithAppInstalled, phoneNum)) {
                                 UserData userData = dataSnapshot.getValue(UserData.class);
                                 contactsWithAppInstalledUids.add(dataSnapshot.getKey());
                                 contactsWithAppInstalled.add(userData);
@@ -141,6 +164,7 @@ public class Home extends AppCompatActivity {
                     }
                     phoneNumsFromDb.add(dataSnapshot.child("phoneNumber").getValue().toString());
                 }
+                // Grid adapter that takes the list of the contact profiles and binds them to the gridview.
                 GridAdapter gridAdapter = new GridAdapter(Home.this, contactsWithAppInstalled, drawablesList);
                 gridView.setAdapter(gridAdapter);
             }
@@ -152,11 +176,16 @@ public class Home extends AppCompatActivity {
         });
     }
 
+    /*
+        checkContainsNameInList checks if a user is already added in gridview, to avoid duplicates.
+     */
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public boolean containsName(final List<UserData> list, final String phoneNumber){
+    public boolean checkContainsNameInList(final List<UserData> list, final String phoneNumber){
         return list.stream().map(UserData::getPhoneNumber).filter(phoneNumber::equals).findFirst().isPresent();
     }
 
+
+    // Get user's contacts from their device's contact list.
     private List<String> getContactList() {
         List<String> phoneNumsFromPhone = new ArrayList<>();
         ContentResolver cr = getContentResolver();
@@ -191,14 +220,4 @@ public class Home extends AppCompatActivity {
         }
         return phoneNumsFromPhone;
     }
-
-//    @Override
-//    public void onBackPressed() {
-//        super.onBackPressed();
-//        FirebaseAuth.getInstance().signOut();
-//        Intent intent = new Intent(Home.this, MainActivity.class);
-//        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-//        startActivity(intent);
-//        finish();
-//    }
 }

@@ -1,3 +1,10 @@
+/**
+ * FcmNotificationSender
+ * This class handles the sending notifications to a specific device.
+ * A PUT request is sent to firebase FCM service which in return, sends a notification to a specific
+ * device whose device id is provided.
+ */
+
 package com.example.doma.Notifications;
 
 import android.app.Activity;
@@ -26,7 +33,7 @@ public class FcmNotificationSender {
     Activity mActivity;
 
     private RequestQueue requestQueue;
-    private final String postUrl = "https://fcm.googleapis.com/fcm/send";
+    private final String postUrl = "https://fcm.googleapis.com/fcm/send"; // endpoint
     private final String fcmServerKey ="AAAAvJ8Tnxc:APA91bHFcLTGnvJONEjXK6edZY40e9-uW4ZzejBX3PZHBEvkb-kwFA5wg8dKtrmrV_E8v6R-n5Sa1wYkN1RE6qhRV4SJvflaunY_QwBO7CT55WVpafg0XGnd9a7Mg6s7KSu1FSO9xGFA";
 
     public FcmNotificationSender(String userFcmToken, String title, String body, Context mContext, Activity mActivity) {
@@ -40,12 +47,13 @@ public class FcmNotificationSender {
     public void sendNotifications() {
         requestQueue = Volley.newRequestQueue(mActivity);
         JSONObject mainObj = new JSONObject();
+        // Notification body data in json format
         try {
             mainObj.put("to", userFcmToken);
             JSONObject notiObject = new JSONObject();
             notiObject.put("title", title);
             notiObject.put("body", body);
-            notiObject.put("icon", "icon");
+            notiObject.put("icon", "icon"); // enter icon that exists in drawable only
             mainObj.put("notification", notiObject);
             JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, postUrl, mainObj, new Response.Listener<JSONObject>() {
                 @Override

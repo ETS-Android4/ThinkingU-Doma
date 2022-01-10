@@ -1,3 +1,8 @@
+/**
+ * FirebaseMessagingService
+ * Responsible for handling the incoming notifications.
+ */
+
 package com.example.doma.Notifications;
 
 import android.app.NotificationChannel;
@@ -14,6 +19,7 @@ import android.os.Vibrator;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 
+import com.example.doma.Activities.ContactProfile;
 import com.example.doma.Activities.MainActivity;
 import com.google.firebase.messaging.RemoteMessage;
 
@@ -24,7 +30,10 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
-
+        /*
+            Handle the user's device notification ringtone and phone vibration duration
+            upon a notification received.
+         */
         Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
         r.play();
@@ -32,10 +41,12 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
             r.setLooping(false);
         }
 
+        // Vibrate the phone twice upon notification received.
         Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         long[] pattern = {100, 300, 300, 300};
         vibrator.vibrate(pattern, -1);
 
+        // Show the icon of application with notification.
         int resourceImage = getResources().getIdentifier(remoteMessage.getNotification().getIcon(), "drawable", getPackageName());
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "CHANNEL_ID");
@@ -45,9 +56,11 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
             builder.setSmallIcon(resourceImage);
         }
 
-        Intent intent = new Intent(this, MainActivity.class);
+        Intent intent = new Intent(this, ContactProfile.class);
+        // Open the ContactProfile activity upon tap on the notification.
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+        // Show received notification's metadata.
         builder.setContentTitle(remoteMessage.getNotification().getTitle());
         builder.setContentText(remoteMessage.getNotification().getBody());
         builder.setContentIntent(pendingIntent);
