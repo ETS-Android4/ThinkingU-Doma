@@ -15,3 +15,9 @@ Once a user sends a notificatoion to a contact, the send button gets disabled fo
     - Open firebase.google.com in your browser and creat a new project in firebase console.
     - Go to android studio and select tools > Firebase > (Firebase assistant will open) Auhtentication > Authenticate using sign in > connect app to firebase and add the firebase
       authentication to your app. Refer to the screenshots below. 
+      
+      ![Screenshot 2022-01-11 010937](https://user-images.githubusercontent.com/97124152/148853412-ac258dbf-0c9f-44de-a329-88117d2e89f2.jpg)
+
+      ![Screenshot 2022-01-11 0113582323242](https://user-images.githubusercontent.com/97124152/148853561-4c9be41b-4a3a-41ac-9b8e-ff6a4593e5dd.jpg)
+
+      
